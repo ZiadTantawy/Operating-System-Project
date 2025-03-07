@@ -6,7 +6,7 @@
 
 void* thread_function(void* arg) {
     pthread_t thread_id = pthread_self();
-    printf("Thread 2 ID: %lu |  Thread is starting.\n", thread_id);
+    printf("Thread 2 ID: %lu | : Thread is starting.\n", thread_id);
     printf("Thread 2 ID: %lu | : Thread is running.\n", thread_id);
     printf("Thread 2 ID: %lu | : Thread is ending.\n", thread_id);
     return NULL;
