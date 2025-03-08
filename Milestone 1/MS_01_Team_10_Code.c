@@ -151,16 +151,16 @@ int main(){
     pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
 
     // Run each thread with FIFO, Round Robin, and SJF scheduling policies
-    run_thread_with_policy(&ptid1, &attr, thread1, SCHED_FIFO, 0, "Thread 1", "FIFO");
-    // run_thread_with_policy(&ptid1, &attr, thread1, SCHED_RR, 30, "Thread 1", "Round Robin");
+    // run_thread_with_policy(&ptid1, &attr, thread1, SCHED_FIFO, 90, "Thread 1", "FIFO");
+    run_thread_with_policy(&ptid1, &attr, thread1, SCHED_RR, 90, "Thread 1", "Round Robin");
     // run_thread_with_policy(&ptid1, &attr, thread1, SCHED_OTHER, 0, "Thread 1", "SJF");
 
-    run_thread_with_policy(&ptid2, &attr, thread2, SCHED_FIFO, 0, "Thread 2", "FIFO");
-    // run_thread_with_policy(&ptid2, &attr, thread2, SCHED_RR, 30, "Thread 2", "Round Robin");
+    // run_thread_with_policy(&ptid2, &attr, thread2, SCHED_FIFO,50, "Thread 2", "FIFO");
+    run_thread_with_policy(&ptid2, &attr, thread2, SCHED_RR, 50, "Thread 2", "Round Robin");
     // run_thread_with_policy(&ptid2, &attr, thread2, SCHED_OTHER, 0, "Thread 2", "SJF");
 
-    run_thread_with_policy(&ptid3, &attr, thread3, SCHED_FIFO, 0, "Thread 3", "FIFO");
-    //run_thread_with_policy(&ptid3, &attr, thread3, SCHED_RR, 30, "Thread 3", "Round Robin");
+    // run_thread_with_policy(&ptid3, &attr, thread3, SCHED_FIFO, 10, "Thread 3", "FIFO");
+    run_thread_with_policy(&ptid3, &attr, thread3, SCHED_RR, 10, "Thread 3", "Round Robin");
     // run_thread_with_policy(&ptid3, &attr, thread3, SCHED_OTHER, 0, "Thread 3", "SJF");
 
     pthread_attr_destroy(&attr);
