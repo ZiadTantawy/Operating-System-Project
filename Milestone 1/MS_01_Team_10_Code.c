@@ -32,9 +32,13 @@ void calculate_metrics(metrics_t *metrics) {
     struct timeval utime = metrics->usage.ru_utime;
     struct timeval stime = metrics->usage.ru_stime;
     
+   // long double total_cpu_time = (utime.tv_sec + stime.tv_sec) + (utime.tv_usec + stime.tv_usec) / 1e6;
+    //metrics->cpu_utilization = (total_cpu_time / (metrics->finish_time - metrics->release_time));
     long double total_cpu_time = (utime.tv_sec + stime.tv_sec) + (utime.tv_usec + stime.tv_usec) / 1e6;
-    
-    metrics->cpu_utilization = (metrics->execution_time > 0) ? (total_cpu_time / metrics->execution_time) : 0.0;
+metrics->cpu_utilization = (metrics->execution_time > 0) ? (total_cpu_time / (metrics->finish_time - metrics->release_time)) : 0.0;
+
+
+    //metrics->cpu_utilization = (metrics->execution_time > 0) ? (total_cpu_time / (metrics->finish_time - metrics->release_time)) : 0.0;
 }
 
 void print_metrics(metrics_t *metrics, const char* thread_name, const char* policy_name) {
@@ -66,7 +70,7 @@ void *thread1(void *args) {
     }
     printf("\n");
     metrics1.finish_time = clock();
-    getrusage(RUSAGE_THREAD, &metrics1.usage);
+    getrusage(RUSAGE_SELF, &metrics1.usage);
     calculate_metrics(&metrics1);
     pthread_exit(NULL);
 }
@@ -74,18 +78,11 @@ void *thread1(void *args) {
 void *thread2(void* arg) {
     metrics2.start_time = clock();
     pthread_t thread_id = pthread_self();
-<<<<<<< HEAD
     printf("Thread 2 ID: %lu | Thread is running.\n", thread_id);
     metrics2.finish_time = clock();
-    getrusage(RUSAGE_THREAD, &metrics2.usage);
+    getrusage(RUSAGE_SELF, &metrics2.usage);
     calculate_metrics(&metrics2);
     return NULL;
-=======
-    printf("Thread 2 ID: %lu | : Thread is starting.\n", thread_id);
-    printf("Thread 2 ID: %lu | : Thread is running.\n", thread_id);
-    printf("Thread 2 ID: %lu | : Thread is ending.\n", thread_id);
-    pthread_exit(NULL);
->>>>>>> 46cccb6403eb480084b9fb550d375ff4c13aa8fa
 }
 
 void *thread3(void *args) {
@@ -106,7 +103,7 @@ void *thread3(void *args) {
     printf("Thread 3: Sum = %d, Average = %.2f, Product = %d\n", sum, avg, prod);
     
     metrics3.finish_time = clock();
-    getrusage(RUSAGE_THREAD, &metrics3.usage);
+    getrusage(RUSAGE_SELF, &metrics3.usage);
     calculate_metrics(&metrics3);
     pthread_exit(NULL);
 }
@@ -121,7 +118,6 @@ int main(){
     CPU_SET(0, &cpuset);
     sched_setaffinity(0, sizeof(cpu_set_t), &cpuset);
 
-<<<<<<< HEAD
     pthread_attr_init(&attr1);
     pthread_attr_init(&attr2);
     pthread_attr_init(&attr3);
@@ -133,7 +129,7 @@ int main(){
     // Thread 1
     metrics1.release_time = clock();
     pthread_attr_setschedpolicy(&attr1, SCHED_RR);
-    param.sched_priority = 90;
+    param.sched_priority = 20;
     pthread_attr_setschedparam(&attr1, &param);
     pthread_create(&ptid1, &attr1, thread1, NULL);
 
@@ -143,23 +139,6 @@ int main(){
     param.sched_priority = 30;
     pthread_attr_setschedparam(&attr2, &param);
     pthread_create(&ptid2, &attr2, thread2, NULL);
-=======
-
-    
-
-    // Run each thread with FIFO, Round Robin, and SJF scheduling policies
-    // run_thread_with_policy(&ptid1, &attr, thread1, SCHED_FIFO, 30, "Thread 1", "FIFO");
-    // run_thread_with_policy(&ptid1, &attr, thread1, SCHED_RR, 30, "Thread 1", "Round Robin");
-    run_thread_with_policy(&ptid1, &attr, thread1, SCHED_OTHER, 0, "Thread 1", "SJF");
-
-    // run_thread_with_policy(&ptid2, &attr, thread2, SCHED_FIFO,30, "Thread 2", "FIFO");
-    //run_thread_with_policy(&ptid2, &attr, thread2, SCHED_RR, 30, "Thread 2", "Round Robin");
-    run_thread_with_policy(&ptid2, &attr, thread2, SCHED_OTHER, 0, "Thread 2", "SJF");
-
-    // run_thread_with_policy(&ptid3, &attr, thread3, SCHED_FIFO, 30, "Thread 3", "FIFO");
-    // run_thread_with_policy(&ptid3, &attr, thread3, SCHED_RR, 30, "Thread 3", "Round Robin");
-    run_thread_with_policy(&ptid3, &attr, thread3, SCHED_OTHER, 0, "Thread 3", "SJF");
->>>>>>> 46cccb6403eb480084b9fb550d375ff4c13aa8fa
 
     // Thread 3
     metrics3.release_time = clock();
