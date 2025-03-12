@@ -76,7 +76,7 @@ void *thread2(void* arg) {
     metrics2.start_time = clock();
     pthread_t thread_id = pthread_self();
     printf("Thread 2 ID: %lu |  Thread is starting.\n", thread_id);
-    for(long i=0;i<1e9;i++){}
+   // for(long i=0;i<1e9;i++){}
     printf("Thread 2 ID: %lu | : Thread is running.\n", thread_id);
     for(long i=0;i<1e9;i++){}
     printf("Thread 2 ID: %lu | : Thread is ending.\n", thread_id);
@@ -146,34 +146,47 @@ int main(){
 
     // Thread 1
     metrics1.release_time = clock();
-    pthread_attr_setschedpolicy(&attr1, SCHED_RR);
+  //pthread_attr_setschedpolicy(&attr1, SCHED_RR);
+  //pthread_attr_setschedpolicy(&attr1, SCHED_FIFO);
+    pthread_attr_setschedpolicy(&attr1, SCHED_OTHER);
     param.sched_priority = 20;
     pthread_attr_setschedparam(&attr1, &param);
     pthread_create(&ptid1, &attr1, thread1, NULL);
 
     // Thread 2
     metrics2.release_time = clock();
-    pthread_attr_setschedpolicy(&attr2, SCHED_RR);
+   //pthread_attr_setschedpolicy(&attr2, SCHED_RR);
+   //pthread_attr_setschedpolicy(&attr2, SCHED_FIFO);
+   pthread_attr_setschedpolicy(&attr2, SCHED_OTHER);
     param.sched_priority = 30;
     pthread_attr_setschedparam(&attr2, &param);
     pthread_create(&ptid2, &attr2, thread2, NULL);
 
     // Thread 3
     metrics3.release_time = clock();
-    pthread_attr_setschedpolicy(&attr3, SCHED_RR);
+   //pthread_attr_setschedpolicy(&attr3, SCHED_RR);
+  //pthread_attr_setschedpolicy(&attr3, SCHED_FIFO);
+    pthread_attr_setschedpolicy(&attr3, SCHED_OTHER);
     param.sched_priority = 10;
     pthread_attr_setschedparam(&attr3, &param);
     pthread_create(&ptid3, &attr3, thread3, NULL);
 
     // Join threads
     pthread_join(ptid1, NULL);
-    print_metrics(&metrics1, "Thread 1", "Round Robin");
+  //print_metrics(&metrics1, "Thread 1", "Round Robin");
+  //print_metrics(&metrics1, "Thread 1", "First In First Out");
+    print_metrics(&metrics1, "Thread 1", "SCHED_OTHER");
 
     pthread_join(ptid2, NULL);
-    print_metrics(&metrics2, "Thread 2", "Round Robin");
+   //print_metrics(&metrics2, "Thread 2", "Round Robin");
+   //print_metrics(&metrics1, "Thread 2", "First In First Out");
+    print_metrics(&metrics1, "Thread 2", "SCHED_OTHER");   
 
     pthread_join(ptid3, NULL);
-    print_metrics(&metrics3, "Thread 3", "Round Robin");
+  //print_metrics(&metrics3, "Thread 3", "Round Robin");
+  //print_metrics(&metrics1, "Thread 3", "First In First Out");
+    print_metrics(&metrics1, "Thread 3", "SCHED_OTHER");
+
 
     // Get system usage after threads have finished
     getrusage(RUSAGE_SELF, &system_usage_end);
