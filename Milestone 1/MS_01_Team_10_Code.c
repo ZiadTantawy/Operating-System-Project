@@ -22,6 +22,7 @@ typedef struct {
 } metrics_t;
 
 metrics_t metrics1, metrics2, metrics3;
+struct rusage system_usage_start, system_usage_end;
 
 void calculate_metrics(metrics_t *metrics) {
     metrics->execution_time = ((long double)(metrics->finish_time - metrics->start_time)) / CLOCKS_PER_SEC;
@@ -32,13 +33,9 @@ void calculate_metrics(metrics_t *metrics) {
     struct timeval utime = metrics->usage.ru_utime;
     struct timeval stime = metrics->usage.ru_stime;
     
-   // long double total_cpu_time = (utime.tv_sec + stime.tv_sec) + (utime.tv_usec + stime.tv_usec) / 1e6;
-    //metrics->cpu_utilization = (total_cpu_time / (metrics->finish_time - metrics->release_time));
     long double total_cpu_time = (utime.tv_sec + stime.tv_sec) + (utime.tv_usec + stime.tv_usec) / 1e6;
-metrics->cpu_utilization = (metrics->execution_time > 0) ? (total_cpu_time / (metrics->finish_time - metrics->release_time)) : 0.0;
-
-
-    //metrics->cpu_utilization = (metrics->execution_time > 0) ? (total_cpu_time / (metrics->finish_time - metrics->release_time)) : 0.0;
+    long double total_elapsed_time = ((long double)(metrics->finish_time - metrics->release_time)) / CLOCKS_PER_SEC;
+    metrics->cpu_utilization = (total_elapsed_time > 0) ? (total_cpu_time / total_elapsed_time) : 0.0;
 }
 
 void print_metrics(metrics_t *metrics, const char* thread_name, const char* policy_name) {
@@ -70,7 +67,7 @@ void *thread1(void *args) {
     }
     printf("\n");
     metrics1.finish_time = clock();
-    getrusage(RUSAGE_SELF, &metrics1.usage);
+    getrusage(RUSAGE_THREAD, &metrics1.usage);
     calculate_metrics(&metrics1);
     pthread_exit(NULL);
 }
@@ -78,9 +75,13 @@ void *thread1(void *args) {
 void *thread2(void* arg) {
     metrics2.start_time = clock();
     pthread_t thread_id = pthread_self();
-    printf("Thread 2 ID: %lu | Thread is running.\n", thread_id);
+    printf("Thread 2 ID: %lu |  Thread is starting.\n", thread_id);
+    for(long i=0;i<1e9;i++){}
+    printf("Thread 2 ID: %lu | : Thread is running.\n", thread_id);
+    for(long i=0;i<1e9;i++){}
+    printf("Thread 2 ID: %lu | : Thread is ending.\n", thread_id);
     metrics2.finish_time = clock();
-    getrusage(RUSAGE_SELF, &metrics2.usage);
+    getrusage(RUSAGE_THREAD, &metrics2.usage);
     calculate_metrics(&metrics2);
     return NULL;
 }
@@ -103,9 +104,23 @@ void *thread3(void *args) {
     printf("Thread 3: Sum = %d, Average = %.2f, Product = %d\n", sum, avg, prod);
     
     metrics3.finish_time = clock();
-    getrusage(RUSAGE_SELF, &metrics3.usage);
+    getrusage(RUSAGE_THREAD, &metrics3.usage);
     calculate_metrics(&metrics3);
     pthread_exit(NULL);
+}
+
+void print_system_cpu_load() {
+    struct timeval utime_start = system_usage_start.ru_utime;
+    struct timeval stime_start = system_usage_start.ru_stime;
+    struct timeval utime_end = system_usage_end.ru_utime;
+    struct timeval stime_end = system_usage_end.ru_stime;
+
+    long double total_cpu_time_start = (utime_start.tv_sec + stime_start.tv_sec) + (utime_start.tv_usec + stime_start.tv_usec) / 1e6;
+    long double total_cpu_time_end = (utime_end.tv_sec + stime_end.tv_sec) + (utime_end.tv_usec + stime_end.tv_usec) / 1e6;
+
+    long double total_cpu_time = total_cpu_time_end - total_cpu_time_start;
+
+    printf("\nSystem CPU Load: %Lf seconds\n", total_cpu_time);
 }
 
 int main(){
@@ -125,6 +140,9 @@ int main(){
     pthread_attr_setinheritsched(&attr1, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setinheritsched(&attr2, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setinheritsched(&attr3, PTHREAD_EXPLICIT_SCHED);
+
+    // Get system usage before starting threads
+    getrusage(RUSAGE_SELF, &system_usage_start);
 
     // Thread 1
     metrics1.release_time = clock();
@@ -147,6 +165,7 @@ int main(){
     pthread_attr_setschedparam(&attr3, &param);
     pthread_create(&ptid3, &attr3, thread3, NULL);
 
+    // Join threads
     pthread_join(ptid1, NULL);
     print_metrics(&metrics1, "Thread 1", "Round Robin");
 
@@ -155,6 +174,10 @@ int main(){
 
     pthread_join(ptid3, NULL);
     print_metrics(&metrics3, "Thread 3", "Round Robin");
+
+    // Get system usage after threads have finished
+    getrusage(RUSAGE_SELF, &system_usage_end);
+    print_system_cpu_load();
 
     pthread_attr_destroy(&attr1);
     pthread_attr_destroy(&attr2);
